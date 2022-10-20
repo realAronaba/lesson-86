@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eks-gitops
+  labels:
+    app: eks-gitops
+spec:
+  type: LoadBalancer
+  selector:
+    app: eks-gitops
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+
