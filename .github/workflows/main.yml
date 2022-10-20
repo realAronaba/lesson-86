@@ -40,7 +40,7 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
      
     - name: Update kube-confg
-      run: aws eks update-kubeconfig --name eksworkshop-eksctl --region us-east-1 --role-arn arn:aws:sts::851844343568:assumed-role/deploy
+      run: aws eks update-kubeconfig --name eksworkshop-eksctl --region us-east-1 --role-arn arn:aws:iam::851844343568:role/deploy
   
     - name: Deploy on EKS
       id: run-eks
