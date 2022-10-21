@@ -1,22 +1,25 @@
-name: Deploy to ECR
+name: Deploy to production
 
 on:
- 
   push:
     branches: [ main ]
 
-jobs:  
-  build:
-    
-    name: Build Image
+jobs:
+
+  deploy:
+    name: Build image
     runs-on: ubuntu-latest
 
-   
     steps:
-
     - name: Check out code
       uses: actions/checkout@v2
-    
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v1
+      with:
+        version: 'v1.21.3'
+      id: install
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -28,27 +31,22 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Build image, tag, and push image to Amazon ECR
-      id: build-image
+   
+    - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: docker_nodejs_demo
-        IMAGE_TAG: latest
+        IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-     
-    - name: Update kube-confg
-      run: aws eks update-kubeconfig --name eksworkshop-eksctl --region us-east-1 
-       
-   - name: Configure AWS Credentials
-     uses: aws-actions/configure-aws-credentials@v1
-     with:
-       role-to-assume: arn:aws:iam::851844343568:role/deploy
-       aws-region: us-east-1
-  
-    - name: Deploy on EKS
-      id: run-eks
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+        docker push -a $ECR_REGISTRY/$ECR_REPOSITORY
+
+    - name: Update kube config
+      run: aws eks update-kubeconfig --name simple-bank --region eu-west-1
+
+    - name: Deploy image to Amazon EKS
       run: |
-        kubectl apply -f deploy.yaml 
+        kubectl apply -f aws-auth.yaml
+        kubectl apply -f deploy.yaml
         kubectl apply -f service.yaml
+        
